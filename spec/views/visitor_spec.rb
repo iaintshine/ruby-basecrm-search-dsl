@@ -213,6 +213,27 @@ RSpec.describe Search::Dsl::Visitor do
     end
   end
 
+  describe 'take' do
+    it 'should add a per_page' do
+      test = contacts.take(1)
+      search_query = {
+        query: {},
+        per_page: 1
+      }
+      expect(compile(test)).to eq(search_query)
+    end
+  end
+
+  describe 'skip' do
+    it 'should add an offset' do
+      test = contacts.skip(1)
+      search_query = {
+        query: {},
+        offset: 1
+      }
+      expect(compile(test)).to eq(search_query)
+    end
+  end
 
   describe 'Complex query' do
     it 'should escape strings' do
@@ -221,6 +242,8 @@ RSpec.describe Search::Dsl::Visitor do
              .where(contacts[:id].eq(1))
              .where(contacts[:email].eq('email@example.com'))
              .order(contacts[:name].asc, contacts[:added_at].desc)
+             .skip(1)
+             .take(2)
       search_query = {
         query: {
           projection: [
@@ -266,7 +289,9 @@ RSpec.describe Search::Dsl::Visitor do
               order: :descending
             }
           ]
-        }
+        },
+        offset: 1,
+        per_page: 2
       }
       expect(compile(test)).to eq(search_query)
     end

@@ -8,7 +8,6 @@ module Search
       private
 
 
-
       def visit_Arel_Nodes_Casted o, collector
         o.val
       end
@@ -45,10 +44,24 @@ module Search
           collector[:query][:sort] = orders
         end
 
-        # collector = maybe_visit o.limit, collector
-        # collector = maybe_visit o.offset, collector
-        # collector = maybe_visit o.lock, collector
+        visit_Arel_Nodes_SelectOptions(o, collector)
 
+        collector
+      end
+
+
+      def visit_Arel_Nodes_SelectOptions o, collector
+        collector = maybe_visit o.limit, collector
+        collector = maybe_visit o.offset, collector
+      end
+
+      def visit_Arel_Nodes_Offset o, collector
+        collector[:offset] = visit o.expr, collector
+        collector
+      end
+
+      def visit_Arel_Nodes_Limit o, collector
+        collector[:per_page] = visit o.expr, collector
         collector
       end
 
@@ -102,6 +115,11 @@ module Search
         collector
       end
 
+      def maybe_visit thing, collector
+        return collector unless thing
+        visit thing, collector
+      end
+
       def attribute(name)
         { name: name }
       end
@@ -129,6 +147,7 @@ module Search
       def visit_Arel_Attributes_Attribute(o, collector)
         o.name
       end
+
       alias :visit_Arel_Attributes_Integer :visit_Arel_Attributes_Attribute
       alias :visit_Arel_Attributes_Float :visit_Arel_Attributes_Attribute
       alias :visit_Arel_Attributes_Decimal :visit_Arel_Attributes_Attribute
@@ -140,11 +159,13 @@ module Search
         o.to_s
       end
 
+      def identity(o, _)
+        o
+      end
+
+      alias :visit_Bignum                :identity
+      alias :visit_Fixnum                :identity
       alias :visit_Arel_Nodes_SqlLiteral :literal
-      alias :visit_Bignum                :literal
-      alias :visit_Fixnum                :literal
-
-
 
       def visit_Arel_Nodes_Equality(o, collector)
         left = visit(o.left, collector)
